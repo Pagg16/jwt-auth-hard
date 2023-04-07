@@ -2,7 +2,6 @@ const UserModel = require("../models/userModel");
 const bcrypt = require("bcrypt");
 const uuid = require("uuid");
 const mailServise = require("./mailServise");
-const TokenServise = require("./tokenServise");
 const tokenServise = require("./tokenServise");
 const UserDto = require("../dtos.js/userDto");
 
@@ -27,7 +26,13 @@ class UserService {
 
     const userDto = new UserDto(user);
     const tokens = tokenServise.generateTokens({ ...userDto });
-    await tokenServise.saveToken();
+
+    await tokenServise.saveToken(userDto.id, tokens.refreshToken);
+
+    return {
+      ...tokens,
+      user: userDto,
+    };
   }
 }
 
