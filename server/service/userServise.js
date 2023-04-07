@@ -4,7 +4,6 @@ const uuid = require("uuid");
 const mailServise = require("./mailServise");
 const tokenServise = require("./tokenServise");
 const UserDto = require("../dtos.js/userDto");
-
 class UserService {
   async registration(email, password) {
     const candidate = await UserModel.findOne({ email });
@@ -18,11 +17,15 @@ class UserService {
     const hashPassword = await bcrypt.hash(password, 3);
     const activationLink = uuid.v4();
     const user = await UserModel.create({
-      user,
+      email,
       password: hashPassword,
       activationLink,
     });
-    await mailServise.sendActivationMail({ email, activationLink });
+
+    await mailServise.sendActivationMail(
+      email,
+      `${process.env.API_URL}/api/activate/${activationLink}`
+    );
 
     const userDto = new UserDto(user);
     const tokens = tokenServise.generateTokens({ ...userDto });
@@ -33,6 +36,16 @@ class UserService {
       ...tokens,
       user: userDto,
     };
+  }
+
+  async activate(activationLink) {
+    const user = await UserModel.findOne({
+      activationLink,
+    });
+
+    if (!user) {
+      throw new Error("Неккоректная ссылка активации");
+    }
   }
 }
 
